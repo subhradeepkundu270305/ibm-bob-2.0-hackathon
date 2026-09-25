@@ -46,3 +46,6 @@ scratch/
 *.sqlite
 *.sqlite3
 *.db
+
+# PDF documents
+*.pdf
