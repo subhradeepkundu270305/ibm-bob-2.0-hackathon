@@ -41,3 +41,8 @@ venv/
 .cache/
 tmp/
 scratch/
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
