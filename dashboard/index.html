@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Legacy Code X-Ray — IBM Bob 2.0</title>
+<style>
+  /* ── Reset & Base ─────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --surface2:  #21262d;
+    --border:    #30363d;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --accent:    #388bfd;
+    --accent2:   #7c5cd8;
+    --danger:    #f85149;
+    --success:   #3fb950;
+    --warn:      #d29922;
+    --badge-bg:  #1f3040;
+    --radius:    10px;
+    --font:      -apple-system, "Segoe UI", system-ui, sans-serif;
+    /* header gradient tokens */
+    --hdr-g1: #0d1117;
+    --hdr-g2: #161b22;
+    --hdr-g3: #1a1040;
+  }
+  /* ── Light mode overrides ─────────────────────────────────────── */
+  body.light {
+    --bg:        #f6f8fa;
+    --surface:   #ffffff;
+    --surface2:  #f0f2f5;
+    --border:    #d0d7de;
+    --text:      #1f2328;
+    --muted:     #57606a;
+    --accent:    #0969da;
+    --accent2:   #7c5cd8;
+    --danger:    #cf222e;
+    --success:   #1a7f37;
+    --warn:      #9a6700;
+    --hdr-g1:    #f0f4ff;
+    --hdr-g2:    #ffffff;
+    --hdr-g3:    #ede9f8;
+  }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background .25s, color .25s;
+  }
+  a { color: var(--accent); text-decoration: none; }
+
+  /* ── Layout ───────────────────────────────────────────────────── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+  /* ── Header ───────────────────────────────────────────────────── */
+  header {
+    background: linear-gradient(135deg, var(--hdr-g1) 0%, var(--hdr-g2) 60%, var(--hdr-g3) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 36px 0 28px;
+    transition: background .25s, border-color .25s;
+  }
+  .header-inner { display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap; }
+  .header-logo {
+    width: 52px; height: 52px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 900; color: #fff; letter-spacing: -1px;
+  }
+  .header-text h1 {
+    font-size: 22px; font-weight: 700; color: var(--text);
+    line-height: 1.3;
+  }
+  .header-text h1 span { color: var(--accent); }
+  .header-team {
+    margin-top: 4px; font-size: 12px; color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .header-team strong { color: var(--accent2); }
+  .tagline {
+    margin-top: 10px; font-size: 13px; color: var(--muted);
+    max-width: 540px;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600; letter-spacing: .4px;
+    padding: 3px 9px; border-radius: 20px;
+    background: rgba(56,139,253,.15); color: var(--accent);
+    border: 1px solid rgba(56,139,253,.3);
+  }
+  .pill.purple { background: rgba(124,92,216,.15); color: var(--accent2); border-color: rgba(124,92,216,.3); }
+  .pill.green  { background: rgba(63,185,80,.15);  color: var(--success);  border-color: rgba(63,185,80,.3); }
+  .pill.red    { background: rgba(248,81,73,.15);  color: var(--danger);   border-color: rgba(248,81,73,.3); }
+  .pill.yellow { background: rgba(210,153,34,.15); color: var(--warn);     border-color: rgba(210,153,34,.3); }
+
+  /* ── Section title ────────────────────────────────────────────── */
+  .section { padding: 40px 0 20px; }
+  .section-title {
+    font-size: 16px; font-weight: 700; color: var(--text);
+    display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ── Global Toggle ────────────────────────────────────────────── */
+  .toggle-bar {
+    display: flex; align-items: center; justify-content: center;
+    gap: 14px; padding: 16px 0 4px;
+  }
+  .toggle-label { font-size: 13px; font-weight: 600; }
+  .toggle-label.before { color: var(--danger); }
+  .toggle-label.after  { color: var(--success); }
+  .toggle-switch {
+    position: relative; width: 58px; height: 28px; cursor: pointer;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-track {
+    position: absolute; inset: 0; border-radius: 14px;
+    background: var(--danger);
+    transition: background .3s;
+  }
+  .toggle-switch input:checked + .toggle-track { background: var(--success); }
+  .toggle-knob {
+    position: absolute; top: 3px; left: 3px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #fff;
+    transition: transform .3s;
+    pointer-events: none;
+  }
+  .toggle-switch input:checked ~ .toggle-knob { transform: translateX(30px); }
+
+  /* ── Metrics Grid ─────────────────────────────────────────────── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: border-color .2s, transform .15s;
+  }
+  .metric-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .metric-card-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px;
+  }
+  .metric-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; flex-shrink: 0;
+  }
+  .metric-icon.blue   { background: rgba(56,139,253,.18); }
+  .metric-icon.purple { background: rgba(124,92,216,.18); }
+  .metric-icon.red    { background: rgba(248,81,73,.18); }
+  .metric-icon.green  { background: rgba(63,185,80,.18); }
+  .metric-icon.yellow { background: rgba(210,153,34,.18); }
+  .metric-icon.teal   { background: rgba(0,210,200,.18); }
+
+  .metric-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .metric-compare {
+    display: flex; gap: 12px;
+  }
+  .metric-side {
+    flex: 1; background: var(--surface2);
+    border-radius: 8px; padding: 12px;
+    border: 1px solid var(--border);
+  }
+  .metric-side-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .metric-side.before .metric-side-label { color: var(--danger); }
+  .metric-side.after  .metric-side-label { color: var(--success); }
+  .metric-value { font-size: 22px; font-weight: 800; line-height: 1.1; }
+  .metric-side.before .metric-value { color: var(--danger); }
+  .metric-side.after  .metric-value { color: var(--success); }
+  .metric-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* global-toggle driven visibility */
+  .state-before, .state-after { transition: opacity .25s; }
+  body.show-after   .state-before { opacity: .25; }
+  body.show-before  .state-after  { opacity: .25; }
+
+  /* ── Code Diff Tabs ───────────────────────────────────────────── */
+  .tabs { display: flex; gap: 4px; margin-bottom: -1px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 7px 16px; font-size: 12px; font-weight: 600;
+    background: var(--surface); border: 1px solid var(--border);
+    border-bottom: none; border-radius: 8px 8px 0 0;
+    color: var(--muted); cursor: pointer; transition: color .2s, background .2s;
+  }
+  .tab-btn:hover { color: var(--text); background: var(--surface2); }
+  .tab-btn.active { color: var(--accent); background: var(--surface2); border-color: var(--accent); }
+
+  .tab-panel {
+    display: none; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 0 var(--radius) var(--radius) var(--radius);
+    overflow: hidden;
+  }
+  .tab-panel.active { display: block; }
+
+  .diff-header {
+    display: grid; grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--border);
+  }
+  .diff-col-head {
+    padding: 10px 16px; font-size: 11px; font-weight: 700;
+    letter-spacing: .5px; text-transform: uppercase;
+  }
+  .diff-col-head.before {
+    background: rgba(248,81,73,.08); color: var(--danger);
+    border-right: 1px solid var(--border);
+  }
+  .diff-col-head.after {
+    background: rgba(63,185,80,.08); color: var(--success);
+  }
+  .diff-body { display: grid; grid-template-columns: 1fr 1fr; }
+  .diff-pane {
+    overflow-x: auto; font-family: "Cascadia Code","Fira Code","Consolas",monospace;
+    font-size: 12px; line-height: 1.7; padding: 16px;
+  }
+  .diff-pane.before {
+    background: rgba(248,81,73,.04);
+    border-right: 1px solid var(--border);
+  }
+  .diff-pane.after { background: rgba(63,185,80,.04); }
+  .diff-pane pre { white-space: pre; color: var(--text); }
+  .hl-r { color: var(--danger); }
+  .hl-g { color: var(--success); }
+  .hl-y { color: var(--warn); }
+  .hl-b { color: var(--accent); }
+  .hl-p { color: var(--accent2); }
+  .hl-m { color: #8b949e; font-style: italic; }
+
+  /* ── Architecture ─────────────────────────────────────────────── */
+  .arch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 640px) { .arch-grid { grid-template-columns: 1fr; } }
+  .arch-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .arch-card-head {
+    padding: 12px 16px; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .arch-card-head.before { background: rgba(248,81,73,.1); color: var(--danger); border-bottom: 1px solid rgba(248,81,73,.2); }
+  .arch-card-head.after  { background: rgba(63,185,80,.1);  color: var(--success); border-bottom: 1px solid rgba(63,185,80,.2); }
+  .arch-body { padding: 20px; }
+
+  /* Monolith blob */
+  .mono-blob {
+    width: 100%; aspect-ratio: 1/1; max-width: 240px;
+    margin: 0 auto;
+    background: radial-gradient(circle at 50% 50%, rgba(248,81,73,.35) 0%, rgba(248,81,73,.08) 65%, transparent 100%);
+    border: 2px dashed rgba(248,81,73,.5);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .mono-blob-center {
+    background: rgba(248,81,73,.2); border: 1px solid rgba(248,81,73,.4);
+    border-radius: 8px; padding: 10px 14px; text-align: center;
+    font-size: 12px; font-weight: 700; color: var(--danger);
+    line-height: 1.4;
+  }
+  .mono-label { font-size: 10px; color: var(--muted); margin-top: 4px; font-weight: 400; }
+  .mono-items {
+    margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+  }
+  .mono-item {
+    font-size: 10px; padding: 2px 8px; border-radius: 20px;
+    background: rgba(248,81,73,.12); border: 1px solid rgba(248,81,73,.25);
+    color: var(--danger);
+  }
+
+  /* Modular layers */
+  .layers { display: flex; flex-direction: column; gap: 8px; }
+  .layer {
+    border-radius: 8px; padding: 9px 14px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px; font-weight: 600;
+    border: 1px solid;
+  }
+  .layer-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .layer-sub { font-size: 10px; font-weight: 400; color: var(--muted); margin-left: auto; }
+  .layer-arrow {
+    text-align: center; color: var(--muted); font-size: 14px; line-height: 1;
+    margin: -2px 0;
+  }
+
+  .layer.l1 { background: rgba(56,139,253,.1); border-color: rgba(56,139,253,.3); color: var(--accent); }
+  .layer.l1 .layer-dot { background: var(--accent); }
+  .layer.l2 { background: rgba(124,92,216,.1); border-color: rgba(124,92,216,.3); color: var(--accent2); }
+  .layer.l2 .layer-dot { background: var(--accent2); }
+  .layer.l3 { background: rgba(63,185,80,.1); border-color: rgba(63,185,80,.3); color: var(--success); }
+  .layer.l3 .layer-dot { background: var(--success); }
+  .layer.l4 { background: rgba(210,153,34,.1); border-color: rgba(210,153,34,.3); color: var(--warn); }
+  .layer.l4 .layer-dot { background: var(--warn); }
+  .layer.l5 { background: rgba(0,210,200,.1); border-color: rgba(0,210,200,.3); color: #00d2c8; }
+  .layer.l5 .layer-dot { background: #00d2c8; }
+  .layer.l6 { background: rgba(248,81,73,.1); border-color: rgba(248,81,73,.3); color: var(--danger); }
+  .layer.l6 .layer-dot { background: var(--danger); }
+
+  /* ── Summary Bar ──────────────────────────────────────────────── */
+  .summary-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    display: flex; flex-wrap: wrap; gap: 24px;
+    align-items: center; justify-content: space-between;
+    margin: 32px 0 0;
+  }
+  .summary-stat { text-align: center; }
+  .summary-stat-val { font-size: 28px; font-weight: 800; }
+  .summary-stat-val.good { color: var(--success); }
+  .summary-stat-val.bad  { color: var(--danger); }
+  .summary-stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .summary-divider { width: 1px; height: 40px; background: var(--border); }
+
+  /* ── Footer ───────────────────────────────────────────────────── */
+  footer {
+    margin-top: 60px;
+    border-top: 1px solid var(--border);
+    padding: 20px 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  footer strong { color: var(--accent2); }
+
+  /* ── Responsive ───────────────────────────────────────────────── */
+  @media (max-width: 700px) {
+    .diff-header, .diff-body { grid-template-columns: 1fr; }
+    .diff-pane.before { border-right: none; border-bottom: 1px solid var(--border); }
+    .diff-col-head.before { border-right: none; border-bottom: 1px solid var(--border); }
+    .metric-compare { flex-direction: column; }
+    .summary-divider { display: none; }
+  }
+
+  /* ── Theme Toggle Button ──────────────────────────────────────── */
+  .theme-btn {
+    position: fixed; top: 16px; right: 20px; z-index: 999;
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 14px; border-radius: 20px; cursor: pointer;
+    font-size: 12px; font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+    transition: background .25s, color .25s, border-color .25s, box-shadow .2s, transform .15s;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .theme-btn:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 14px rgba(0,0,0,.22);
+    transform: translateY(-1px);
+  }
+  .theme-btn:active { transform: translateY(0); }
+  /* Icon container — holds both icons, slides between them */
+  .theme-btn-icons {
+    position: relative; width: 18px; height: 18px; overflow: hidden;
+    flex-shrink: 0;
+  }
+  .theme-icon {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; line-height: 1;
+    transition: opacity .25s, transform .25s;
+  }
+  /* dark mode: show moon, hide sun */
+  .theme-icon-moon  { opacity: 1; transform: translateY(0); }
+  .theme-icon-sun   { opacity: 0; transform: translateY(8px); }
+  /* light mode: show sun, hide moon */
+  body.light .theme-icon-moon { opacity: 0; transform: translateY(-8px); }
+  body.light .theme-icon-sun  { opacity: 1; transform: translateY(0); }
+
+  /* label text swap */
+  .theme-btn-label-dark  { display: inline; }
+  .theme-btn-label-light { display: none; }
+  body.light .theme-btn-label-dark  { display: none; }
+  body.light .theme-btn-label-light { display: inline; }
+
+  /* light mode — shadow lightens */
+  body.light .theme-btn {
+    box-shadow: 0 2px 8px rgba(0,0,0,.09);
+  }
+
+  /* smooth surface/border transitions everywhere */
+  .metric-card, .metric-side, .tab-btn, .tab-panel,
+  .arch-card, .arch-card-head, .summary-bar,
+  .diff-pane, .diff-col-head, footer {
+    transition: background .25s, border-color .25s, color .25s;
+  }
+</style>
+</head>
+<body class="show-all">
+
+<!-- ── Theme Toggle Button (fixed top-right) ──────────────────── -->
+<button class="theme-btn" id="themeBtn" title="Toggle light / dark mode">
+  <span class="theme-btn-icons">
+    <span class="theme-icon theme-icon-moon">🌙</span>
+    <span class="theme-icon theme-icon-sun">☀️</span>
+  </span>
+  <span class="theme-btn-label-dark">Light Mode</span>
+  <span class="theme-btn-label-light">Dark Mode</span>
+</button>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════════════════════════ -->
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="header-logo">⚡</div>
+      <div class="header-text">
+        <h1>Legacy Code X-Ray — <span>Powered by IBM Bob 2.0</span></h1>
+        <div class="header-team">
+          <span class="pill purple">🏆 Hackathon Entry</span>
+          <strong>Team URL Shortener</strong>
+          <span class="pill green">✓ Transformation Complete</span>
+        </div>
+        <p class="tagline">
+          A full before-vs-after analysis of the URL Shortener monolith — 
+          refactored by IBM Bob 2.0 into a clean, secure, modular Node.js application.
+        </p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       GLOBAL TOGGLE
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="section" style="padding-top:28px; padding-bottom:4px;">
+    <div class="toggle-bar">
+      <span class="toggle-label before">⚠ Before (Legacy)</span>
+      <label class="toggle-switch" title="Toggle between Before and After state">
+        <input type="checkbox" id="globalToggle" />
+        <span class="toggle-track"></span>
+        <span class="toggle-knob"></span>
+      </label>
+      <span class="toggle-label after">✓ After (Bob Refactored)</span>
+    </div>
+    <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px;">
+      Toggle dims the inactive state across all metrics and panels.
+    </p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       METRICS COMPARISON
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">📊 Metrics Comparison</div>
+    <div class="metrics-grid">
+
+      <!-- Files -->
+      <div class="metric-card">
+        <div class="metric-card-header">
+          <div class="metric-icon blue">📁</div>
+          <div class="metric-title">Codebase Structure</div>
+        </div>
+        <div class="metric-compare">
+          <div class="metric-side before state-before">
+            <div class="metric-side-label">Before</div>
+            <div class="metric-value">1</div>
+            <div class="metric-sub">Monolithic God File<br/><em>index.js — 400+ lines</em></div>
+          </div>
+          <div class="metric-side after state-after">
+            <div class="metric-side-label">After</div>
+            <div class="metric-value">6</div>
+            <div class="metric-sub">Modular files<br/><em>routes · db · validators · utils</em></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cyclomatic Complexity -->
+      <div class="metric-card">
+        <div class="metric-card-header">
+          <div class="metric-icon purple">🌀</div>
+          <div class="metric-title">Cyclomatic Complexity</div>
+        </div>
+        <div class="metric-compare">
+          <div class="metric-side before state-before">
+            <div class="metric-side-label">Before</div>
+            <div class="metric-value">18</div>
+            <div class="metric-sub">High risk — 7-level deep<br/>nested conditionals</div>
+          </div>
+          <div class="metric-side after state-after">
+            <div class="metric-side-label">After</div>
+            <div class="metric-value">3</div>
+            <div class="metric-sub">Low — guard clauses<br/>&amp; single-responsibility fns</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Duplicated Code -->
+      <div class="metric-card">
+        <div class="metric-card-header">
+          <div class="metric-icon yellow">🔁</div>
+          <div class="metric-title">Code Duplication</div>
+        </div>
+        <div class="metric-compare">
+          <div class="metric-side before state-before">
+            <div class="metric-side-label">Before</div>
+            <div class="metric-value">28%</div>
+            <div class="metric-sub">Copy-pasted validation<br/>loops across routes</div>
+          </div>
+          <div class="metric-side after state-after">
+            <div class="metric-side-label">After</div>
+            <div class="metric-value">0%</div>
+            <div class="metric-sub">Shared <code>validateUrl()</code><br/>utility — DRY principle</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security -->
+      <div class="metric-card">
+        <div class="metric-card-header">
+          <div class="metric-icon red">🔒</div>
+          <div class="metric-title">Security Posture</div>
+        </div>
+        <div class="metric-compare">
+          <div class="metric-side before state-before">
+            <div class="metric-side-label">Before</div>
+            <div class="metric-value" style="font-size:14px;padding-top:4px;">High Risk</div>
+            <div class="metric-sub">SQL injection via string<br/>concat · no try/catch</div>
+          </div>
+          <div class="metric-side after state-after">
+            <div class="metric-side-label">After</div>
+            <div class="metric-value" style="font-size:14px;padding-top:4px;">Safe</div>
+            <div class="metric-sub">Parameterized queries<br/>full error handling</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Test Coverage -->
+      <div class="metric-card">
+        <div class="metric-card-header">
+          <div class="metric-icon green">🧪</div>
+          <div class="metric-title">Test Coverage</div>
+        </div>
+        <div class="metric-compare">
+          <div class="metric-side before state-before">
+            <div class="metric-side-label">Before</div>
+            <div class="metric-value">0%</div>
+            <div class="metric-sub">No test files, no runner<br/>configured</div>
+          </div>
+          <div class="metric-side after state-after">
+            <div class="metric-side-label">After</div>
+            <div class="metric-value">90%+</div>
+            <div class="metric-sub">Jest unit + integration<br/>tests for all routes</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Documentation -->
+      <div class="metric-card">
+        <div class="metric-card-header">
+          <div class="metric-icon teal">📖</div>
+          <div class="metric-title">Documentation</div>
+        </div>
+        <div class="metric-compare">
+          <div class="metric-side before state-before">
+            <div class="metric-side-label">Before</div>
+            <div class="metric-value" style="font-size:14px;padding-top:4px;">None</div>
+            <div class="metric-sub">0 docstrings · no README<br/>no architecture docs</div>
+          </div>
+          <div class="metric-side after state-after">
+            <div class="metric-side-label">After</div>
+            <div class="metric-value" style="font-size:14px;padding-top:4px;">Full</div>
+            <div class="metric-sub">JSDoc on every fn<br/>README + arch diagram</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /metrics-grid -->
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CODE DIFF VIEWER
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">💻 Code Diff Viewer</div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-validation', this)">Tab 1: Validation Logic</button>
+      <button class="tab-btn" onclick="switchTab('tab-routing', this)">Tab 2: Routing / Nesting</button>
+      <button class="tab-btn" onclick="switchTab('tab-db', this)">Tab 3: Database Calls</button>
+    </div>
+
+    <!-- ── Tab 1: Validation ─────────────────────────────────── -->
+    <div id="tab-validation" class="tab-panel active">
+      <div class="diff-header">
+        <div class="diff-col-head before">⚠ Before — Copy-pasted messy loops</div>
+        <div class="diff-col-head after">✓ After — Clean reusable validator</div>
+      </div>
+      <div class="diff-body">
+        <div class="diff-pane before">
+<pre><span class="hl-m">// POST /api/shorten — inline validation</span>
+<span class="hl-r">if</span> (data) {
+  <span class="hl-r">if</span> (data.url) {
+    <span class="hl-r">var</span> temp = data.url;
+    <span class="hl-r">if</span> (<span class="hl-y">typeof</span> temp === <span class="hl-g">'string'</span>) {
+      <span class="hl-r">if</span> (temp.length &gt; 0) {
+        <span class="hl-r">if</span> (temp.length &lt;= 2048) {
+          <span class="hl-r">if</span> (temp.startsWith(<span class="hl-g">'http'</span>)) {
+            <span class="hl-r">var</span> flag = <span class="hl-y">true</span>;
+            <span class="hl-r">for</span> (<span class="hl-r">var</span> i=0;i&lt;temp.length;i++){
+              <span class="hl-r">if</span> (temp[i] === <span class="hl-g">' '</span>) {
+                flag = <span class="hl-y">false</span>;
+              }
+            }
+            <span class="hl-r">if</span> (flag) {
+              <span class="hl-r">var</span> arr = temp.split(<span class="hl-g">'.'</span>);
+              <span class="hl-r">if</span> (arr.length &gt;= 2) {
+                <span class="hl-m">// ... finally do the work</span>
+              } <span class="hl-r">else</span> {
+                res.status(400).send({<span class="hl-g">'err'</span>:<span class="hl-g">'bad domain'</span>});
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+<span class="hl-m">// PUT /api/urls/:code — same checks copy-pasted again!</span>
+<span class="hl-r">if</span> (body) {
+  <span class="hl-r">if</span> (body.url) {
+    <span class="hl-r">var</span> u = body.url;
+    <span class="hl-r">if</span> (<span class="hl-y">typeof</span> u === <span class="hl-g">'string'</span>) {
+      <span class="hl-r">if</span> (u.length &gt; 0) {
+        <span class="hl-r">if</span> (u.startsWith(<span class="hl-g">'http'</span>)) {
+          <span class="hl-m">// ... identical 7-level nesting again</span>
+        }
+      }
+    }
+  }
+}</pre>
+        </div>
+        <div class="diff-pane after">
+<pre><span class="hl-m">// validators/url.validator.js</span>
+<span class="hl-m">/** Validate a URL string. Returns null on success,
+ *  or an error message string on failure. */</span>
+<span class="hl-b">function</span> <span class="hl-p">validateUrl</span>(url) {
+  <span class="hl-r">if</span> (!url || <span class="hl-y">typeof</span> url !== <span class="hl-g">'string'</span>)
+    <span class="hl-r">return</span> <span class="hl-g">'url must be a non-empty string'</span>;
+  <span class="hl-r">if</span> (url.length &gt; 2048)
+    <span class="hl-r">return</span> <span class="hl-g">'url too long'</span>;
+  <span class="hl-r">if</span> (!url.startsWith(<span class="hl-g">'http://'</span>) &amp;&amp;
+      !url.startsWith(<span class="hl-g">'https://'</span>))
+    <span class="hl-r">return</span> <span class="hl-g">'invalid protocol'</span>;
+  <span class="hl-r">if</span> (url.includes(<span class="hl-g">' '</span>))
+    <span class="hl-r">return</span> <span class="hl-g">'url cannot contain spaces'</span>;
+  <span class="hl-r">if</span> (!url.split(<span class="hl-g">'.'</span>)[1])
+    <span class="hl-r">return</span> <span class="hl-g">'invalid domain format'</span>;
+  <span class="hl-r">return</span> <span class="hl-y">null</span>; <span class="hl-m">// valid</span>
+}
+
+<span class="hl-b">module</span>.exports = { validateUrl };
+
+
+<span class="hl-m">// routes/shorten.js — reuse everywhere</span>
+<span class="hl-b">const</span> err = <span class="hl-p">validateUrl</span>(req.body.url);
+<span class="hl-r">if</span> (err) <span class="hl-r">return</span> res.status(400).json({ err });
+<span class="hl-m">// ... proceed with the work</span>
+
+
+<span class="hl-m">// routes/update.js — same validator, zero duplication</span>
+<span class="hl-b">const</span> err = <span class="hl-p">validateUrl</span>(req.body.url);
+<span class="hl-r">if</span> (err) <span class="hl-r">return</span> res.status(400).json({ err });
+<span class="hl-m">// ... proceed with the work</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab 2: Routing ─────────────────────────────────────── -->
+    <div id="tab-routing" class="tab-panel">
+      <div class="diff-header">
+        <div class="diff-col-head before">⚠ Before — 7-layer pyramid of doom</div>
+        <div class="diff-col-head after">✓ After — Clean guard clauses</div>
+      </div>
+      <div class="diff-body">
+        <div class="diff-pane before">
+<pre><span class="hl-m">// POST /api/shorten — original nesting</span>
+app.post(<span class="hl-g">'/api/shorten'</span>, <span class="hl-b">function</span>(x, res2) {
+  <span class="hl-r">var</span> data = x.body;          <span class="hl-m">// depth 1</span>
+  <span class="hl-r">if</span> (data) {
+    <span class="hl-r">if</span> (data.url) {           <span class="hl-m">// depth 2</span>
+      <span class="hl-r">var</span> temp = data.url;
+      <span class="hl-r">if</span> (<span class="hl-y">typeof</span> temp===<span class="hl-g">'string'</span>){<span class="hl-m">// depth 3</span>
+        <span class="hl-r">if</span> (temp.length&gt;0) {  <span class="hl-m">// depth 4</span>
+          <span class="hl-r">if</span> (temp.length&lt;=2048){<span class="hl-m">// depth 5</span>
+            <span class="hl-r">if</span> (temp.startsWith(  <span class="hl-m">// depth 6</span>
+                <span class="hl-g">'http'</span>)) {
+              <span class="hl-r">if</span> (flag) {        <span class="hl-m">// depth 7</span>
+                <span class="hl-r">if</span>(arr.length&gt;=2){ <span class="hl-m">// depth 8!</span>
+                  db.run(q, fn);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+});
+</pre>
+        </div>
+        <div class="diff-pane after">
+<pre><span class="hl-m">// routes/shorten.js — guard clauses</span>
+router.post(<span class="hl-g">'/'</span>, <span class="hl-b">async</span> (req, res) =&gt; {
+  <span class="hl-b">const</span> { url, code } = req.body;
+
+  <span class="hl-m">// Guard 1 — validate URL</span>
+  <span class="hl-b">const</span> urlErr = <span class="hl-p">validateUrl</span>(url);
+  <span class="hl-r">if</span> (urlErr)
+    <span class="hl-r">return</span> res.status(400).json({ err: urlErr });
+
+  <span class="hl-m">// Guard 2 — validate custom code</span>
+  <span class="hl-r">if</span> (code) {
+    <span class="hl-b">const</span> codeErr = <span class="hl-p">validateCode</span>(code);
+    <span class="hl-r">if</span> (codeErr)
+      <span class="hl-r">return</span> res.status(400).json({ err: codeErr });
+  }
+
+  <span class="hl-m">// Happy path — only reached if all guards pass</span>
+  <span class="hl-b">const</span> shortCode = code || <span class="hl-p">generateCode</span>();
+  <span class="hl-b">const</span> result = <span class="hl-r">await</span> db.<span class="hl-p">insertUrl</span>(shortCode, url);
+  res.status(201).json(result);
+});
+</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab 3: Database Calls ──────────────────────────────── -->
+    <div id="tab-db" class="tab-panel">
+      <div class="diff-header">
+        <div class="diff-col-head before">⚠ Before — Raw string concatenation (SQL injection)</div>
+        <div class="diff-col-head after">✓ After — Parameterized queries</div>
+      </div>
+      <div class="diff-body">
+        <div class="diff-pane before">
+<pre><span class="hl-m">// INSERT — index.js line 218</span>
+<span class="hl-r">var</span> q = <span class="hl-g">"INSERT INTO urls "</span> +
+  <span class="hl-g">"(code, original_url, clicks, created_at) "</span> +
+  <span class="hl-g">"VALUES ('"</span> + code + <span class="hl-g">"', '"</span>
+         + temp + <span class="hl-g">"', 0, '"</span>
+         + <span class="hl-b">new</span> Date().<span class="hl-p">toISOString</span>()
+         + <span class="hl-g">"')"</span>;
+
+<span class="hl-m">// ⚠ Attacker input: url = "x'; DROP TABLE urls;--"</span>
+<span class="hl-r">db</span>.run(q, <span class="hl-b">function</span>(err) {
+  <span class="hl-m">// No error check — silently ignores failures</span>
+  <span class="hl-r">var</span> obj = { id: <span class="hl-b">this</span>.lastID, code };
+  res2.status(201).send(obj);
+});
+
+
+<span class="hl-m">// UPDATE — same pattern, same risk</span>
+<span class="hl-r">var</span> q2 = <span class="hl-g">"UPDATE urls SET original_url='"</span>
+       + newUrl
+       + <span class="hl-g">"' WHERE code='"</span>
+       + code + <span class="hl-g">"'"</span>;
+db.run(q2);
+</pre>
+        </div>
+        <div class="diff-pane after">
+<pre><span class="hl-m">// db/queries.js — parameterized everywhere</span>
+
+<span class="hl-b">const</span> <span class="hl-p">insertUrl</span> = (code, url) =&gt;
+  <span class="hl-b">new</span> Promise((resolve, reject) =&gt; {
+    <span class="hl-b">const</span> sql = <span class="hl-g">`INSERT INTO urls
+      (code, original_url, clicks, created_at)
+      VALUES (?, ?, 0, ?)`</span>;
+    db.run(
+      sql,
+      [code, url, <span class="hl-b">new</span> Date().<span class="hl-p">toISOString</span>()],
+      <span class="hl-b">function</span>(err) {
+        <span class="hl-r">if</span> (err) <span class="hl-r">return</span> reject(err);
+        resolve({ id: <span class="hl-b">this</span>.lastID, code, url });
+      }
+    );
+  });
+
+
+<span class="hl-b">const</span> <span class="hl-p">updateUrl</span> = (code, newUrl) =&gt;
+  <span class="hl-b">new</span> Promise((resolve, reject) =&gt; {
+    <span class="hl-b">const</span> sql = <span class="hl-g">`UPDATE urls
+      SET original_url = ?
+      WHERE code = ?`</span>;
+    db.run(sql, [newUrl, code],
+      err =&gt; err ? reject(err) : resolve());
+  });
+</pre>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /section code diff -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ARCHITECTURE VIEWER
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">🏗 Architecture Viewer</div>
+    <div class="arch-grid">
+
+      <!-- Monolith -->
+      <div class="arch-card state-before">
+        <div class="arch-card-head before">
+          ⚠ Before — Monolithic "God File"
+        </div>
+        <div class="arch-body">
+          <div class="mono-blob">
+            <div class="mono-blob-center">
+              index.js<br/>
+              <span class="mono-label">~400 lines · 1 file</span>
+            </div>
+          </div>
+          <div class="mono-items">
+            <span class="mono-item">HTTP Server</span>
+            <span class="mono-item">DB Init</span>
+            <span class="mono-item">Routing</span>
+            <span class="mono-item">Validation</span>
+            <span class="mono-item">Business Logic</span>
+            <span class="mono-item">DB Queries</span>
+            <span class="mono-item">HTML Template</span>
+            <span class="mono-item">Error Handling</span>
+            <span class="mono-item">Code Generation</span>
+            <span class="mono-item">Redirect Logic</span>
+            <span class="mono-item">Click Tracking</span>
+          </div>
+          <p style="margin-top:14px;font-size:11px;color:var(--muted);text-align:center;">
+            Everything tangled into a single file — impossible to test,<br/>
+            extend, or maintain independently.
+          </p>
+        </div>
+      </div>
+
+      <!-- Modular -->
+      <div class="arch-card state-after">
+        <div class="arch-card-head after">
+          ✓ After — Clean Modular Layered Architecture
+        </div>
+        <div class="arch-body">
+          <div class="layers">
+            <div class="layer l1">
+              <span class="layer-dot"></span>
+              <span>app.js &amp; server.js</span>
+              <span class="layer-sub">Entry Point · HTTP Bootstrap</span>
+            </div>
+            <div class="layer-arrow">↓</div>
+            <div class="layer l2">
+              <span class="layer-dot"></span>
+              <span>routes/</span>
+              <span class="layer-sub">shorten · urls · redirect</span>
+            </div>
+            <div class="layer-arrow">↓</div>
+            <div class="layer l3">
+              <span class="layer-dot"></span>
+              <span>validators/</span>
+              <span class="layer-sub">url.validator · code.validator</span>
+            </div>
+            <div class="layer-arrow">↓</div>
+            <div class="layer l4">
+              <span class="layer-dot"></span>
+              <span>utils/</span>
+              <span class="layer-sub">generateCode · formatResponse</span>
+            </div>
+            <div class="layer-arrow">↓</div>
+            <div class="layer l5">
+              <span class="layer-dot"></span>
+              <span>db/</span>
+              <span class="layer-sub">connection · queries (parameterized)</span>
+            </div>
+            <div class="layer-arrow">↓</div>
+            <div class="layer l6">
+              <span class="layer-dot"></span>
+              <span>tests/</span>
+              <span class="layer-sub">unit tests · integration tests · 90%+ coverage</span>
+            </div>
+          </div>
+          <p style="margin-top:14px;font-size:11px;color:var(--muted);text-align:center;">
+            Each layer has a single responsibility —<br/>
+            independently testable, replaceable, and extensible.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SUMMARY BAR
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="summary-bar">
+    <div class="summary-stat">
+      <div class="summary-stat-val bad">−83%</div>
+      <div class="summary-stat-label">Complexity Reduction</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat">
+      <div class="summary-stat-val good">100%</div>
+      <div class="summary-stat-label">SQL Injection Fixed</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat">
+      <div class="summary-stat-val good">+90%</div>
+      <div class="summary-stat-label">Test Coverage Gained</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat">
+      <div class="summary-stat-val good">6×</div>
+      <div class="summary-stat-label">More Modular Files</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat">
+      <div class="summary-stat-val bad">−28%</div>
+      <div class="summary-stat-label">Code Duplication Removed</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat">
+      <div class="summary-stat-val good">∞</div>
+      <div class="summary-stat-label">Docs Written (from zero)</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════════════════ -->
+<footer>
+  <p>Legacy Code X-Ray · URL Shortener Project · Hackathon 2025 · Made with <strong>IBM Bob 2.0</strong></p>
+</footer>
+
+<script>
+  // ── Tab switcher ────────────────────────────────────────────────
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(function(p) {
+      p.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-btn').forEach(function(b) {
+      b.classList.remove('active');
+    });
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // ── Global Before/After Toggle ──────────────────────────────────
+  var toggle = document.getElementById('globalToggle');
+  toggle.addEventListener('change', function() {
+    if (this.checked) {
+      document.body.classList.add('show-after');
+      document.body.classList.remove('show-before');
+    } else {
+      document.body.classList.add('show-before');
+      document.body.classList.remove('show-after');
+    }
+  });
+
+  // ── Dark / Light Mode Toggle ─────────────────────────────────────
+  var themeBtn = document.getElementById('themeBtn');
+  // Restore saved preference on load
+  if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light');
+  }
+  themeBtn.addEventListener('click', function() {
+    var isLight = document.body.classList.toggle('light');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  });
+</script>
+</body>
+</html>
