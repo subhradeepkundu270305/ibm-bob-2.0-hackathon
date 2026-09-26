@@ -241,3 +241,6 @@ Screenshots of each Bob interaction are in
 | `04_refactor_constants_naming.png` | Prompt 2.4 — constants and renaming |
 | `05_refactor_sql_security.png` | Prompt 2.5 — parameterised SQL + error handling |
 | `06_modular_tests.png` | Prompt 2.6 — modular architecture and test suite |
+## Verification
+
+The refactoring workflow was verified by reviewing the resulting project structure, checking the generated documentation, and running the available automated tests. The changes were kept isolated from the original legacy implementation so the before-and-after state could be demonstrated during the hackathon.
