@@ -1,6 +1,27 @@
-# URL Shortener
+# ⚡ Legacy Code X-Ray — Powered by IBM Bob 2.0
 
-A lightweight, self-contained URL shortening service built with **Node.js**, **Express 5**, and **SQLite**. Paste any long URL and receive a short, shareable link that tracks every click. A built-in browser dashboard lets you create, browse, edit, and delete entries without touching the API directly.
+> **IBM Bob 2.0 Hackathon Official Submission** &nbsp;|&nbsp; **Team:** `(SP)² NeuralX`  
+> 🌐 **Live Interactive Dashboard:** [ibm-bob-2-0-hackathon-seven.vercel.app](https://ibm-bob-2-0-hackathon-seven.vercel.app)
+
+<p align="center">
+  <img src="docs/team-banner.png" alt="(SP)² NeuralX — Team of 4 Innovators" width="100%" />
+</p>
+
+### 👥 Team (SP)² NeuralX — Innovators
+| Member | Role & Track | Focus Area |
+|:---|:---|:---|
+| **Subhradeep Kundu** | **Team Leader** (Final year CSE) | Architecture mapping, JSDoc documentation, README, Code smells audit |
+| **Sounak Maiti** | Innovator (Final year ECE) | Problem/solution statement, Bob usage statement, video presentation & slides |
+| **Priya Sitoula** | Innovator (Final year CSE) | Interactive comparison dashboard, 3D UI & light/dark theme visualization |
+| **Partha Das** | Innovator (Final year CSE) | Code smells modular refactoring, SQL security, 21 automated test suites |
+
+---
+
+## About The Project
+
+**Legacy Code X-Ray** is an end-to-end codebase modernization engine built and demonstrated during the **IBM Bob 2.0 Hackathon (September 25–27, 2026)**. Using our testbed — a legacy, single-file URL shortening service built with **Node.js**, **Express 5**, and **SQLite** — we leveraged IBM Bob 2.0 directly inside VS Code to map architecture, detect critical smells, refactor into clean MVC modules, and generate a 100% passing test suite.
+
+A built-in interactive browser dashboard lets judges and developers inspect the entire before-vs-after transformation.
 
 ---
 

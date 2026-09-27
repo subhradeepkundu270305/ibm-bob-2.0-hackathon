@@ -72,7 +72,7 @@ SQL injection: Critical. Duplicated validation: High. Arrow-of-doom nesting: Hig
 
 > *[Screen recording: Open `dashboard/index.html` in browser — the Legacy Code X-Ray
 > dashboard fills the screen. Show the header: "Legacy Code X-Ray — Powered by
-> IBM Bob 2.0", badges: "Hackathon Entry", "Team URL Shortener",
+> IBM Bob 2.0", badges: "Hackathon Entry", "(SP)² NeuralX",
 > "✓ Transformation Complete".]*
 
 **NARRATOR (V.O.):**

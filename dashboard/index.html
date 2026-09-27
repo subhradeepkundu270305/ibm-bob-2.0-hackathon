@@ -161,7 +161,20 @@
     margin-top: 6px; font-size: 13px; color: var(--muted); font-weight: 500;
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   }
-  .header-team strong { color: var(--accent2); font-weight: 700; }
+  .header-team strong {
+    color: var(--accent2);
+    font-weight: 800;
+    font-size: 14.5px;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .header-team strong sup {
+    font-size: 10px;
+    font-weight: 900;
+    color: var(--accent);
+  }
   .tagline {
     margin-top: 10px; font-size: 14px; color: var(--muted);
     max-width: 600px;
@@ -566,7 +579,7 @@
   footer {
     margin-top: 60px;
     border-top: 1px solid var(--border);
-    padding: 26px 0;
+    padding: 44px 0 34px;
     text-align: center;
     font-size: 13px;
     color: var(--muted);
@@ -575,6 +588,106 @@
     font-weight: 500;
   }
   footer strong { color: var(--accent2); font-weight: 700; }
+
+  /* ── Team Showcase Banner in Footer ── */
+  .team-showcase {
+    max-width: 960px;
+    margin: 0 auto 32px auto;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.3s ease;
+  }
+  .team-showcase:hover {
+    transform: translateY(-4px) scale(1.008);
+    box-shadow: 0 20px 48px rgba(109, 40, 217, 0.2);
+    border-color: var(--accent2);
+  }
+  .team-showcase-img-wrap {
+    position: relative;
+    width: 100%;
+    background: #090614;
+    line-height: 0;
+  }
+  .team-showcase-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+  }
+  .team-showcase-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 22px;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+  }
+  .team-showcase-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--accent2);
+    letter-spacing: 0.3px;
+  }
+  .team-showcase-badge sup {
+    font-size: 9.5px;
+    font-weight: 900;
+    color: var(--accent);
+  }
+  .team-showcase-quote {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+    font-weight: 600;
+  }
+  .team-members-chips {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .team-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .team-chip:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+  .team-chip-role {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .footer-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .footer-links {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12.5px;
+  }
 
   /* ── Keyframe Animations (Framer Motion style) ────────────────── */
   @keyframes framerFadeDown {
@@ -669,7 +782,7 @@
         <h1>Legacy Code X-Ray — <span>Powered by IBM Bob 2.0</span></h1>
         <div class="header-team">
           <span class="pill purple">🏆 Hackathon Entry</span>
-          <strong>Team URL Shortener</strong>
+          <strong>(SP)<sup>2</sup> NeuralX</strong>
           <span class="pill green">✓ Transformation Complete</span>
         </div>
         <p class="tagline">
@@ -1186,10 +1299,60 @@ db.run(q2);
 </main>
 
 <!-- ═══════════════════════════════════════════════════════════════
-     FOOTER
+     FOOTER & TEAM SHOWCASE
 ════════════════════════════════════════════════════════════════ -->
 <footer>
-  <p>Legacy Code X-Ray · URL Shortener Project · Hackathon 2025 · Made with <strong>IBM Bob 2.0</strong></p>
+  <div class="container">
+    <!-- Team Showcase Card -->
+    <div class="team-showcase">
+      <div class="team-showcase-img-wrap">
+        <img src="team-banner.png" alt="(SP)² NeuralX — Team of 4 Innovators" class="team-showcase-img" />
+      </div>
+      <div class="team-showcase-bar">
+        <div class="team-showcase-badge">
+          <span>🚀</span>
+          <span>(SP)<sup>2</sup> NEURALX</span>
+        </div>
+        <div class="team-showcase-quote">
+          “Think. Code. Innovate. Elevate. — Code Today. Change Tomorrow.”
+        </div>
+      </div>
+    </div>
+
+    <!-- Team Members Row -->
+    <div class="team-members-chips">
+      <div class="team-chip">
+        <span>👑</span>
+        <strong>Subhradeep Kundu</strong>
+        <span class="team-chip-role">(Team Leader · Final year CSE)</span>
+      </div>
+      <div class="team-chip">
+        <span>⚙️</span>
+        <strong>Sounak Maiti</strong>
+        <span class="team-chip-role">(Final year ECE)</span>
+      </div>
+      <div class="team-chip">
+        <span>🎨</span>
+        <strong>Priya Sitoula</strong>
+        <span class="team-chip-role">(Final year CSE)</span>
+      </div>
+      <div class="team-chip">
+        <span>⚡</span>
+        <strong>Partha Das</strong>
+        <span class="team-chip-role">(Final year CSE)</span>
+      </div>
+    </div>
+
+    <!-- Footer Bottom -->
+    <div class="footer-bottom">
+      <p>Legacy Code X-Ray · Built with pride by <strong>(SP)<sup>2</sup> NeuralX</strong> · Modernized with <strong>IBM Bob 2.0</strong></p>
+      <div class="footer-links">
+        <a href="https://github.com/subhradeepkundu270305/ibm-bob-2.0-hackathon" target="_blank" rel="noopener">GitHub Repository</a>
+        <span>•</span>
+        <a href="https://ibm-bob-2-0-hackathon-seven.vercel.app" target="_blank" rel="noopener">Live App on Vercel</a>
+      </div>
+    </div>
+  </div>
 </footer>
 
 <script>

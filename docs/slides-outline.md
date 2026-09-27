@@ -18,15 +18,16 @@
 
 **Badges (inline pill labels):**
 - `🏆 IBM Bob 2.0 Hackathon Entry`
-- `🔗 Team: URL Shortener`
+- `🔗 Team: (SP)² NeuralX`
 - `✅ Transformation Complete`
 
-**Team:**
-| Name | Role |
-|---|---|
-| Subhradeep | Codebase Analysis, Architecture Mapping, Documentation |
-| Partho | Code Smell Refactoring, SQL Security, Test Generation |
-| Priya | Dashboard Design & Before/After Visualization |
+**Team (SP)² NeuralX — 4 Innovators:**
+| Name | Role | Department |
+|---|---|---|
+| Subhradeep Kundu | Team Leader · Codebase Analysis, Architecture Mapping, Docs | Final year CSE |
+| Sounak Maiti | Problem & Bob Usage Framing, Video Script & Presentation | Final year ECE |
+| Priya Sitoula | Dashboard Design, 3D UI, Light/Dark Visualization | Final year CSE |
+| Partha Das | Code Smell Modular Refactoring, SQL Security, Tests | Final year CSE |
 
 **Mission statement (one sentence):**
 > Give any developer — student or seasoned — a complete, actionable X-ray of any
