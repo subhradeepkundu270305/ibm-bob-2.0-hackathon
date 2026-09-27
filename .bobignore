@@ -1,0 +1,42 @@
+﻿# --- Secrets & Environment ----------------------------------------------------
+.env
+.env.*
+!.env.example
+*.local
+
+# --- Version Control ----------------------------------------------------------
+.git/
+
+# --- Dependencies -------------------------------------------------------------
+node_modules/
+
+# --- Database Files -----------------------------------------------------------
+# Runtime SQLite files; Bob should read schema from src/db.js instead
+*.sqlite
+*.sqlite3
+*.db
+
+# --- Build & Cache Artefacts --------------------------------------------------
+dist/
+build/
+.cache/
+tmp/
+scratch/
+
+# --- Logs ---------------------------------------------------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- OS Noise -----------------------------------------------------------------
+.DS_Store
+Thumbs.db
+
+# --- Bob Session Artefacts ----------------------------------------------------
+# Screenshots and session logs are evidence artifacts, not source code.
+# Exclude from Bob's context window to avoid inflating token usage.
+bob_sessions/
+
+# --- Bob Internal -------------------------------------------------------------
+.bob/
